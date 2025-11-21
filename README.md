@@ -6,7 +6,9 @@
 
 
 
-- project initialization (done)
+- project initialization(done)
+- uploading file(done)
+- acceopting only the supported file type .pdf & .txt(done)
 - both api endpoints  are yet to be implemented.
 
 
