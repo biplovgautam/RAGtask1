@@ -6,6 +6,8 @@ all the routers defined in app/api/endpoints.py.'''
 from fastapi import FastAPI
 from app.api import endpoints
 
-app = FastAPI()
+app = FastAPI() 
 
-app.include_router(endpoints.router)
+
+# includes all endpoints in this actual app from the app/api/endpoints.py
+app.include_router(endpoints.router) 
