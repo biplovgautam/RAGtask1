@@ -1,15 +1,25 @@
-# FastAPI app with 2 end points :
-1. Document ingestion API:
-    - accepts(pdf,txt) files, extract text, chunks using selectable stratigies, embed chunks, store embeddings in vectordb and metadata in an RDB/noSQL Db.
-2. Conversation RAG API:
-    - support multi-turn conversational retrieval-augmented generation (RAG) with Redis for session memory, a custom retrieval + LLM composition (no RetrievalQAChain), and an LLM-driven interview booking flow that saves bookings.
+# Backend with two REST APIs using FastAPI :
+
+1. Document Ingestion API
+    - Upload .pdf or .txt files(done)
+    - Extract text, apply two chunking strategies (selectable)
+    - Generate embeddings & store in Pinecone/Qdrant/Weaviate/Milvus
+    - Save metadata in SQL/NoSQL DB
+2. Conversational RAG API
+    - Custom RAG (no RetrievalQAChain)
+    - Use Redis for chat memory
+    - Handle multi-turn queries
+    - Support interview booking (name, email, date, time) using  LLM
+    - Store booking info
 
 
+### Constraints:
+No FAISS/Chroma, no UI, no RetrievalQAChain clean modular code following industry standards for typing and annotations
 
+## Status
 - project initialization(done)
 - uploading file(done)
 - acceopting only the supported file type .pdf & .txt(done)
-- both api endpoints  are yet to be implemented.
 
 
 ## project architecture
