@@ -8,3 +8,24 @@
 
 - project initialization (done)
 - both api endpoints  are yet to be implemented.
+
+
+## project architecture
+```
+RAGtask1/
+├── app/
+│   ├── api/
+│   │   ├── endpoints.py             # FastAPI router definitions
+│   │   ├── models.py                # Pydantic models for API requests/responses
+│   ├── core/
+│   │   ├── config.py                # Environment variables and settings
+│   │   ├── db.py                    # Database connection setup (SQL/NoSQL)
+│   ├── services/
+|   |   ├── llm_wrapper.py                   # Your custom LLM wrapper (if needed)
+│   │   ├── document_service.py      # Logic for text extraction, chunking, embedding
+│   │   ├── vector_store_manager.py  # Pinecone/Qdrant connection and interaction
+│   │   ├── llm_service.py           # Logic for RAG chain, memory, and function calling
+├── .env.example
+├── requirements.txt
+├── main.py
+```

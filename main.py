@@ -1,5 +1,10 @@
+'''
+This is the root of the entire FastAPI application. 
+It creates the main FastAPI() instance and includes/registers 
+all the routers defined in app/api/endpoints.py.'''
+
 from fastapi import FastAPI
-from llmwrapper import GroqLLM
+from app.services.llm_wrapper import GroqLLM
 
 
 app = FastAPI()

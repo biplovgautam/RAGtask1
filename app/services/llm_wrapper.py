@@ -1,6 +1,9 @@
 """
 GroqLLM Wrapper for LangChain
-Automatically loads API key from environment variables
+
+Contains custom GroqLLM class. 
+It's the dedicated module for connecting application to the LLM (Groq in this case),
+handling API keys, request formatting, and error parsing.
 """
 
 import os
