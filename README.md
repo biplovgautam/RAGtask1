@@ -18,7 +18,6 @@ RAGtask1/
 │   │   ├── endpoints.py             # FastAPI router definitions
 │   │   ├── models.py                # Pydantic models for API requests/responses
 │   ├── core/
-│   │   ├── config.py                # Environment variables and settings
 │   │   ├── db.py                    # Database connection setup (SQL/NoSQL)
 │   ├── services/
 |   |   ├── llm_wrapper.py                   # Your custom LLM wrapper (if needed)

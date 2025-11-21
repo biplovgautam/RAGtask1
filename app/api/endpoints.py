@@ -1,6 +1,7 @@
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, File, UploadFile, HTTPException
 from app.services.llm_wrapper import GroqLLM
 from typing import Annotated
+import os
 
 router = APIRouter()
 
@@ -61,6 +62,8 @@ document_router = APIRouter(
     tags=["Document Ingestion"]
 )
 
+# --- Defining allowed extensions ---
+ALLOWED_EXTENSIONS = {'.pdf', '.txt'}
 
 @document_router.post('/uplaod/')
 async def upload_document_file(
@@ -69,18 +72,32 @@ async def upload_document_file(
     file: Annotated[UploadFile, File()]
 ):
     """
-    Handles a file upload request.
-    
-    For the RAG task, this is where you would call document_service.ingest_document(file).
+    Handles a file upload request, restricted to .pdf and .txt files.
     """
     
     # 1. Access the file's metadata
     # The 'file' object is an UploadFile instance.
     file_name = file.filename
 
-    # 2. (Optional but recommended): Close the file stream.
-    # We are not reading or saving the contents, but it's good practice.
+    # 2. If file_name is None (which can happen if the client doesn't provide a name)
+    if not file_name:
+        raise HTTPException(status_code=400, detail="File must have a name.")
+    
+    # 3. Get the file extension
+    file_extension = os.path.splitext(file_name)[1].lower()
+
+    # 4. Check if the extension is in our allowed set
+    if file_extension not in ALLOWED_EXTENSIONS:
+        # If the file type is not allowed, raise an HTTP 400 Bad Request error
+        # Always close the stream before raising the error
+        await file.close() 
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file_extension}. Only .pdf and .txt files are allowed."
+        )
+
+    # 5.. Close the file stream (for successful uploads)
     await file.close()
 
-    # 3. Return the file name as requested
+    # 6. Return the file name as requested
     return {"message": "File received successfully", "filename": file_name}
