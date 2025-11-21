@@ -3,3 +3,4 @@ uvicorn
 langchain-core
 python-dotenv
 requests
+python-multipart

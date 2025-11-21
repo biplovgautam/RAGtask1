@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from app.services.llm_wrapper import GroqLLM
+from typing import Annotated
 
 router = APIRouter()
 
@@ -47,3 +48,39 @@ async def llmtest(string: str):
         "query": user_query,
         "answer": llm_response
     }
+
+
+
+
+
+
+# endpoint for the docuemnt ingestion
+
+document_router = APIRouter(
+    prefix="/documents",
+    tags=["Document Ingestion"]
+)
+
+
+@document_router.post('/uplaod/')
+async def upload_document_file(
+    # Use UploadFile to handle the file contents and metadata
+    # Annotated[UploadFile, File(...)] ensures the parameter is correctly identified as an uploaded file
+    file: Annotated[UploadFile, File()]
+):
+    """
+    Handles a file upload request.
+    
+    For the RAG task, this is where you would call document_service.ingest_document(file).
+    """
+    
+    # 1. Access the file's metadata
+    # The 'file' object is an UploadFile instance.
+    file_name = file.filename
+
+    # 2. (Optional but recommended): Close the file stream.
+    # We are not reading or saving the contents, but it's good practice.
+    await file.close()
+
+    # 3. Return the file name as requested
+    return {"message": "File received successfully", "filename": file_name}

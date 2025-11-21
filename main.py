@@ -11,3 +11,6 @@ app = FastAPI()
 
 # includes all endpoints in this actual app from the app/api/endpoints.py
 app.include_router(endpoints.router) 
+
+# include endpoint for the document ingestion
+app.include_router(endpoints.document_router)
