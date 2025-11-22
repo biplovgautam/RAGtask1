@@ -22,6 +22,7 @@ class IngestionResponse(BaseModel):
     document_id: str
     chunking_strategy: ChunkingStrategy
     extracted_text_length: int
+    num_chunks: int
 
 # --- Document Metadata Model for DB Storage ---
 

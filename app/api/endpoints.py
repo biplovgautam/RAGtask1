@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from app.services.llm_wrapper import GroqLLM
-from app.services.document_service import extract_text_from_file_bytes
+from app.services.document_service import extract_text_from_file_bytes, chunk_text
 from app.api.models import IngestionResponse, ChunkingStrategy
 from typing import Annotated
 import os
@@ -104,21 +104,25 @@ async def upload_document_file(
         # We cast file_extension to the Literal type expected by the function
         text_content = extract_text_from_file_bytes(file_bytes, file_extension) # type: ignore
         
+        # 7. Chunk the text based on the selected strategy
+        chunks = chunk_text(text_content, chunking_strategy)
+        
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         await file.close()
 
-    # 7. Generate a unique document ID
+    # 8. Generate a unique document ID
     doc_id = str(uuid.uuid4())
 
-    # 8. Return the result using the Pydantic model
+    # 9. Return the result using the Pydantic model
     return IngestionResponse(
-        message="File processed successfully",
+        message="File processed and chunked successfully",
         filename=file_name,
         document_id=doc_id,
         chunking_strategy=chunking_strategy,
-        extracted_text_length=len(text_content)
+        extracted_text_length=len(text_content),
+        num_chunks=len(chunks)
     )
 
 

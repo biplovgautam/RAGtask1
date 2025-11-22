@@ -5,3 +5,4 @@ python-dotenv
 requests
 python-multipart
 pypdf
+langchain_text_splitters
