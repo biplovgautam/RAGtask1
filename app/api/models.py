@@ -5,6 +5,9 @@ This ensures that request data (like a chat message) and response data
 
 from enum import Enum
 from pydantic import BaseModel
+from datetime import datetime
+from sqlalchemy import Column, String, Integer, DateTime, Enum as SQLEnum
+from app.core.db import Base
 
 class ChunkingStrategy(str, Enum):
     """
@@ -24,14 +27,17 @@ class IngestionResponse(BaseModel):
     extracted_text_length: int
     num_chunks: int
 
-# --- Document Metadata Model for DB Storage ---
+# --- Document Metadata Model for DB Storage (SQLAlchemy) ---
 
-class DocumentMetadata(BaseModel):
+class DocumentMetadata(Base):
     """
-    Schema for storing document metadata in the SQL/NoSQL database.
+    SQLAlchemy model for the 'documents' table in Neon PostgreSQL.
     """
-    document_id: str
-    filename: str
-    chunking_strategy: ChunkingStrategy
-    num_chunks: int
-    ingestion_timestamp: str
+    __tablename__ = "documents"
+
+    document_id = Column(String, primary_key=True, index=True)
+    filename = Column(String, nullable=False)
+    chunking_strategy = Column(SQLEnum(ChunkingStrategy), nullable=False)
+    num_chunks = Column(Integer, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    upload_timestamp = Column(DateTime, default=datetime.utcnow)

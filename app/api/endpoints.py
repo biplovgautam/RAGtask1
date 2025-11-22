@@ -1,7 +1,10 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, Form
+from fastapi import APIRouter, File, UploadFile, HTTPException, Form, Depends
 from app.services.llm_wrapper import GroqLLM
-from app.services.document_service import extract_text_from_file_bytes, chunk_text
+from app.services.document_service import extract_text_from_file_bytes, chunk_text, save_document_metadata
+from app.services.vector_store_manager import embed_and_store_chunks, search_similar_chunks
 from app.api.models import IngestionResponse, ChunkingStrategy
+from app.core.db import get_db
+from sqlalchemy.orm import Session
 from typing import Annotated
 import os
 import uuid
@@ -68,14 +71,41 @@ document_router = APIRouter(
 # --- Defining allowed extensions ---
 ALLOWED_EXTENSIONS = {'.pdf', '.txt'}
 
+@document_router.get('/test-retrieval/{query}')
+async def test_retrieval(query: str):
+    """
+    Test endpoint to check if vector retrieval works.
+    Searches for chunks similar to the query string.
+    """
+    try:
+        matches = search_similar_chunks(query)
+        
+        # Extract only JSON-serializable data from Pinecone matches
+        serializable_results = []
+        for match in matches:
+            serializable_results.append({
+                "id": match.get("id", ""),
+                "score": match.get("score", 0.0),
+                "metadata": match.get("metadata", {})
+            })
+        
+        return {
+            "query": query, 
+            "num_results": len(serializable_results),
+            "results": serializable_results
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @document_router.post('/upload/', response_model=IngestionResponse)
 async def upload_document_file(
     file: Annotated[UploadFile, File(...)],
-    chunking_strategy: Annotated[ChunkingStrategy, Form()] = ChunkingStrategy.FIXED
+    chunking_strategy: Annotated[ChunkingStrategy, Form()] = ChunkingStrategy.FIXED,
+    db: Session = Depends(get_db)
 ):
     """
     Handles a file upload request, restricted to .pdf and .txt files.
-    Extracts text and prepares for chunking based on the selected strategy.
+    Extracts text, chunks it, embeds/stores in Pinecone, and saves metadata to DB.
     """
     
     # 1. Access the file's metadata
@@ -99,6 +129,7 @@ async def upload_document_file(
     try:
         # 5. Read the file content
         file_bytes = await file.read()
+        file_size = len(file_bytes)
         
         # 6. Extract text from the file
         # We cast file_extension to the Literal type expected by the function
@@ -107,17 +138,35 @@ async def upload_document_file(
         # 7. Chunk the text based on the selected strategy
         chunks = chunk_text(text_content, chunking_strategy)
         
+        # 8. Generate a unique document ID
+        doc_id = str(uuid.uuid4())
+        
+        # 9. Embed and Store in Pinecone (using integrated embeddings)
+        # This will generate embeddings and upsert them to the 'ragtask1' index
+        embed_and_store_chunks(chunks, doc_id)
+        
+        # 10. Save Metadata to Neon PostgreSQL
+        save_document_metadata(
+            db=db,
+            document_id=doc_id,
+            filename=file_name,
+            chunking_strategy=chunking_strategy,
+            num_chunks=len(chunks),
+            file_size=file_size
+        )
+        
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        # Catch other errors (like DB or Pinecone issues)
+        print(f"Error processing document: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
     finally:
         await file.close()
 
-    # 8. Generate a unique document ID
-    doc_id = str(uuid.uuid4())
-
-    # 9. Return the result using the Pydantic model
+    # 11. Return the result using the Pydantic model
     return IngestionResponse(
-        message="File processed and chunked successfully",
+        message="File processed, embedded, and stored successfully",
         filename=file_name,
         document_id=doc_id,
         chunking_strategy=chunking_strategy,

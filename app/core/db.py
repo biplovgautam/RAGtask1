@@ -19,6 +19,7 @@ PINECONE_INDEX_NAME = "ragtask1" # The specific index we want to use
 
 # 'pinecone_index' is the ONLY public interface for Pinecone operations
 pinecone_index = None
+_pc = None  # Pinecone client for inference API
 
 if PINECONE_API_KEY:
     try:
@@ -49,6 +50,10 @@ if DATABASE_URL:
         
         # Create SessionLocal class for creating sessions
         SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=ndb)
+        
+        # Note: Table creation will happen in main.py after all models are imported
+        # to avoid circular import issues
+        
     except Exception as e:
         print(f"Error connecting to Neon DB: {e}")
 else:

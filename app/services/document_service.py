@@ -8,7 +8,45 @@ import os
 from typing import Literal, List
 from pypdf import PdfReader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from app.api.models import ChunkingStrategy
+from app.api.models import ChunkingStrategy, DocumentMetadata
+from sqlalchemy.orm import Session
+from datetime import datetime
+
+
+def save_document_metadata(
+    db: Session,
+    document_id: str,
+    filename: str,
+    chunking_strategy: ChunkingStrategy,
+    num_chunks: int,
+    file_size: int
+) -> DocumentMetadata:
+    """
+    Saves the document metadata to the Neon PostgreSQL database.
+
+    Args:
+        db: The SQLAlchemy database session.
+        document_id: The unique ID of the document.
+        filename: The name of the uploaded file.
+        chunking_strategy: The strategy used for chunking.
+        num_chunks: The total number of chunks generated.
+        file_size: The size of the file in bytes.
+
+    Returns:
+        The created DocumentMetadata instance.
+    """
+    new_doc = DocumentMetadata(
+        document_id=document_id,
+        filename=filename,
+        chunking_strategy=chunking_strategy,
+        num_chunks=num_chunks,
+        file_size=file_size,
+        upload_timestamp=datetime.utcnow()
+    )
+    db.add(new_doc)
+    db.commit()
+    db.refresh(new_doc)
+    return new_doc
 
 
 def chunk_text(text: str, strategy: ChunkingStrategy) -> List[str]:
@@ -104,3 +142,5 @@ def extract_text_from_file_bytes(
     else:
         # This case should ideally not be reached due to prior validation in endpoints.py
         raise ValueError(f"Unsupported file extension for extraction: {file_extension}")
+    
+
