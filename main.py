@@ -14,7 +14,7 @@ app = FastAPI(
 
 # Create database tables
 # Import models to register them with Base
-from app.api.models import DocumentMetadata
+from app.api.models import DocumentMetadata, InterviewBooking
 if ndb is not None:
     Base.metadata.create_all(bind=ndb)
 

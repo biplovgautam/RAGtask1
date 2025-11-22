@@ -37,7 +37,7 @@ RAGtask1/
 │   ├── core/
 │   │   ├── db.py                    # Database connection setup (SQL/NoSQL)
 │   ├── services/
-|   |   ├── llm_wrapper.py                   # Your custom LLM wrapper (if needed)
+|   |   ├── llm_wrapper.py           # custom LLM wrapper (groq)
 │   │   ├── document_service.py      # Logic for text extraction, chunking, embedding
 │   │   ├── vector_store_manager.py  # Pinecone/Qdrant connection and interaction
 │   │   ├── llm_service.py           # Logic for RAG chain, memory, and function calling

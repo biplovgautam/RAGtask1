@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Form, Depends
 from app.services.llm_wrapper import GroqLLM
 from app.services.document_service import extract_text_from_file_bytes, chunk_text, save_document_metadata
 from app.services.vector_store_manager import embed_and_store_chunks, search_similar_chunks
-from app.api.models import IngestionResponse, ChunkingStrategy
+from app.api.models import IngestionResponse, ChunkingStrategy, ChatRequest, ChatResponse, ConversationMode
 from app.core.db import get_db
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -188,3 +188,56 @@ rag_router = APIRouter(
 @rag_router.get("/")
 async def check():
     return ("this is jsut to chek the endpoint /RAG/")
+
+
+@rag_router.post("/chat", response_model=ChatResponse)
+async def conversational_rag(
+    request: ChatRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Conversational RAG endpoint with Redis memory management.
+    
+    This endpoint is completely separate from document ingestion.
+    It provides:
+    - Multi-turn conversations with memory (Redis)
+    - Context retrieval from Pinecone vector store
+    - Interview booking detection and storage
+    - Session management (continue/restart)
+    
+    Args:
+        request: ChatRequest with query, mode, and optional session_id
+        db: Database session for booking storage
+        
+    Returns:
+        ChatResponse with LLM answer, metadata, and booking status
+    """
+    from app.services.llm_service import get_rag_service
+    
+    try:
+        # Get the RAG service
+        rag_service = get_rag_service()
+        
+        # Process the chat request
+        result = rag_service.chat(
+            query=request.query,
+            session_id=request.session_id,
+            mode=request.mode,
+            db=db
+        )
+        
+        # Return response
+        return ChatResponse(
+            response=result["response"],
+            session_id=request.session_id,
+            mode=request.mode,
+            retrieved_chunks=result.get("retrieved_chunks", 0),
+            booking_created=result.get("booking_created", False)
+        )
+        
+    except Exception as e:
+        print(f"Error in conversational RAG: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing chat request: {str(e)}"
+        )

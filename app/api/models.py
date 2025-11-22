@@ -4,10 +4,11 @@ This ensures that request data (like a chat message) and response data
 (like the LLM's answer) strictly conform to a defined JSON structure.'''
 
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, Enum as SQLEnum
 from app.core.db import Base
+from typing import Optional, List
 
 class ChunkingStrategy(str, Enum):
     """
@@ -41,3 +42,48 @@ class DocumentMetadata(Base):
     num_chunks = Column(Integer, nullable=False)
     file_size = Column(Integer, nullable=False)
     upload_timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+# --- Conversational RAG Models ---
+
+class ConversationMode(str, Enum):
+    """
+    Defines conversation modes for chat memory management.
+    """
+    CONTINUE = "continue"   # Continue conversation with history
+    RESTART = "restart"     # Clear history and start fresh
+
+class ChatRequest(BaseModel):
+    """
+    Request model for conversational RAG endpoint.
+    """
+    query: str
+    mode: ConversationMode = ConversationMode.CONTINUE
+    session_id: Optional[str] = "default"  # Optional session ID for multi-user support
+
+class ChatResponse(BaseModel):
+    """
+    Response model for conversational RAG endpoint.
+    """
+    response: str
+    session_id: str
+    mode: ConversationMode
+    retrieved_chunks: Optional[int] = 0
+    booking_created: Optional[bool] = False
+
+# --- Interview Booking Model for DB Storage (SQLAlchemy) ---
+
+class InterviewBooking(Base):
+    """
+    SQLAlchemy model for the 'interview_bookings' table in Neon PostgreSQL.
+    Stores interview booking information extracted by the LLM.
+    """
+    __tablename__ = "interview_bookings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    date = Column(String, nullable=False)  # Store as string (e.g., "2025-11-25")
+    time = Column(String, nullable=False)  # Store as string (e.g., "14:00")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    session_id = Column(String, nullable=True)  # Track which conversation created this booking

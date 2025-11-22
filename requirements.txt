@@ -11,3 +11,4 @@ psycopg2-binary
 sqlalchemy
 urllib3<2.0
 pinecone-client
+redis

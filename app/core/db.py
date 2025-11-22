@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from pinecone import Pinecone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import redis
 
 # Load environment variables
 load_dotenv()
@@ -75,3 +76,25 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# --- 3. Redis Setup (for conversational memory) ---
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+# Redis client for chat memory management
+redis_client = None
+
+try:
+    redis_client = redis.from_url(
+        REDIS_URL,
+        decode_responses=True,  # Automatically decode responses to strings
+        socket_connect_timeout=5,
+        socket_timeout=5
+    )
+    # Test connection
+    redis_client.ping()
+    print(f"✅ Redis connected successfully")
+except Exception as e:
+    print(f"⚠️  Warning: Could not connect to Redis: {e}")
+    print("   Conversational memory will not be available.")
+    redis_client = None
