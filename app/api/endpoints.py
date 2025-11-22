@@ -2,7 +2,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Form, Depends
 from app.services.llm_wrapper import GroqLLM
 from app.services.document_service import extract_text_from_file_bytes, chunk_text, save_document_metadata
 from app.services.vector_store_manager import embed_and_store_chunks, search_similar_chunks
-from app.api.models import IngestionResponse, ChunkingStrategy, ChatRequest, ChatResponse, ConversationMode
+from app.api.models import IngestionResponse, ChunkingStrategy, ChatRequest, ChatResponse, ConversationMode, KnowledgeBaseMode
 from app.core.db import get_db
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -192,21 +192,27 @@ async def check():
 
 @rag_router.post("/chat", response_model=ChatResponse)
 async def conversational_rag(
-    request: ChatRequest,
+    query: Annotated[str, Form(...)],
+    mode: Annotated[ConversationMode, Form()] = ConversationMode.CONTINUE,
+    knowledge_base: Annotated[KnowledgeBaseMode, Form()] = KnowledgeBaseMode.YES,
+    session_id: Annotated[str, Form()] = "default",
     db: Session = Depends(get_db)
 ):
     """
-    Conversational RAG endpoint with Redis memory management.
+    Conversational RAG endpoint with Redis memory management and Form-based parameters.
     
     This endpoint is completely separate from document ingestion.
     It provides:
     - Multi-turn conversations with memory (Redis)
-    - Context retrieval from Pinecone vector store
+    - Optional context retrieval from Pinecone vector store (based on knowledge_base)
     - Interview booking detection and storage
     - Session management (continue/restart)
     
     Args:
-        request: ChatRequest with query, mode, and optional session_id
+        query: User's message/question (Form field)
+        mode: Conversation mode - CONTINUE or RESTART (Form dropdown)
+        knowledge_base: Whether to use vector DB - YES or NO (Form dropdown)
+        session_id: Session identifier (Form field, default: "default")
         db: Database session for booking storage
         
     Returns:
@@ -218,19 +224,24 @@ async def conversational_rag(
         # Get the RAG service
         rag_service = get_rag_service()
         
+        # Convert knowledge_base enum to boolean
+        use_knowledge_base = (knowledge_base == KnowledgeBaseMode.YES)
+        
         # Process the chat request
         result = rag_service.chat(
-            query=request.query,
-            session_id=request.session_id,
-            mode=request.mode,
+            query=query,
+            session_id=session_id,
+            mode=mode,
+            use_knowledge_base=use_knowledge_base,
             db=db
         )
         
         # Return response
         return ChatResponse(
             response=result["response"],
-            session_id=request.session_id,
-            mode=request.mode,
+            session_id=session_id,
+            mode=mode,
+            knowledge_base_used=use_knowledge_base,
             retrieved_chunks=result.get("retrieved_chunks", 0),
             booking_created=result.get("booking_created", False)
         )

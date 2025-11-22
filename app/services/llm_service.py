@@ -193,6 +193,7 @@ Return ONLY a JSON object with this exact format (no other text):
         query: str, 
         session_id: str, 
         mode: ConversationMode,
+        use_knowledge_base: bool,
         db: Session
     ) -> Dict:
         """
@@ -202,6 +203,7 @@ Return ONLY a JSON object with this exact format (no other text):
             query: User's question/message
             session_id: Unique session identifier
             mode: CONTINUE or RESTART
+            use_knowledge_base: Whether to retrieve context from vector DB
             db: Database session for booking storage
             
         Returns:
@@ -244,9 +246,12 @@ Return ONLY a JSON object with this exact format (no other text):
                         "booking_created": True
                     }
         
-        # Regular RAG flow: retrieve context and generate response
-        context, num_chunks = self._retrieve_context(query)
-        
+        # Regular RAG flow: retrieve context based on knowledge_base setting
+        if use_knowledge_base:
+            context, num_chunks = self._retrieve_context(query)
+        else:
+            context = ""
+            num_chunks = 0
         
         # Format history for LLM
         history_text = self._format_chat_history(history)

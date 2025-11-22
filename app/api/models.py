@@ -53,12 +53,20 @@ class ConversationMode(str, Enum):
     CONTINUE = "continue"   # Continue conversation with history
     RESTART = "restart"     # Clear history and start fresh
 
+class KnowledgeBaseMode(str, Enum):
+    """
+    Defines whether to use vector database retrieval or not.
+    """
+    YES = "yes"   # Use Pinecone vector DB for context retrieval
+    NO = "no"     # Skip vector retrieval, use only LLM
+
 class ChatRequest(BaseModel):
     """
     Request model for conversational RAG endpoint.
     """
     query: str
     mode: ConversationMode = ConversationMode.CONTINUE
+    knowledge_base: KnowledgeBaseMode = KnowledgeBaseMode.YES
     session_id: Optional[str] = "default"  # Optional session ID for multi-user support
 
 class ChatResponse(BaseModel):
@@ -68,6 +76,7 @@ class ChatResponse(BaseModel):
     response: str
     session_id: str
     mode: ConversationMode
+    knowledge_base_used: bool
     retrieved_chunks: Optional[int] = 0
     booking_created: Optional[bool] = False
 
