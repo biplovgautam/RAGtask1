@@ -1,7 +1,10 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from app.services.llm_wrapper import GroqLLM
+from app.services.document_service import extract_text_from_file_bytes
+from app.api.models import IngestionResponse, ChunkingStrategy
 from typing import Annotated
 import os
+import uuid
 
 router = APIRouter()
 
@@ -65,21 +68,20 @@ document_router = APIRouter(
 # --- Defining allowed extensions ---
 ALLOWED_EXTENSIONS = {'.pdf', '.txt'}
 
-@document_router.post('/uplaod/')
+@document_router.post('/upload/', response_model=IngestionResponse)
 async def upload_document_file(
-    # Use UploadFile to handle the file contents and metadata
-    # Annotated[UploadFile, File(...)] ensures the parameter is correctly identified as an uploaded file
-    file: Annotated[UploadFile, File()]
+    file: Annotated[UploadFile, File(...)],
+    chunking_strategy: Annotated[ChunkingStrategy, Form()] = ChunkingStrategy.FIXED
 ):
     """
     Handles a file upload request, restricted to .pdf and .txt files.
+    Extracts text and prepares for chunking based on the selected strategy.
     """
     
     # 1. Access the file's metadata
-    # The 'file' object is an UploadFile instance.
     file_name = file.filename
 
-    # 2. If file_name is None (which can happen if the client doesn't provide a name)
+    # 2. If file_name is None
     if not file_name:
         raise HTTPException(status_code=400, detail="File must have a name.")
     
@@ -88,16 +90,48 @@ async def upload_document_file(
 
     # 4. Check if the extension is in our allowed set
     if file_extension not in ALLOWED_EXTENSIONS:
-        # If the file type is not allowed, raise an HTTP 400 Bad Request error
-        # Always close the stream before raising the error
         await file.close() 
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {file_extension}. Only .pdf and .txt files are allowed."
         )
+    
+    try:
+        # 5. Read the file content
+        file_bytes = await file.read()
+        
+        # 6. Extract text from the file
+        # We cast file_extension to the Literal type expected by the function
+        text_content = extract_text_from_file_bytes(file_bytes, file_extension) # type: ignore
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    finally:
+        await file.close()
 
-    # 5.. Close the file stream (for successful uploads)
-    await file.close()
+    # 7. Generate a unique document ID
+    doc_id = str(uuid.uuid4())
 
-    # 6. Return the file name as requested
-    return {"message": "File received successfully", "filename": file_name}
+    # 8. Return the result using the Pydantic model
+    return IngestionResponse(
+        message="File processed successfully",
+        filename=file_name,
+        document_id=doc_id,
+        chunking_strategy=chunking_strategy,
+        extracted_text_length=len(text_content)
+    )
+
+
+
+
+
+# endpoints for the conversational RAG
+
+rag_router = APIRouter(
+    prefix= "/RAG",
+    tags=["Conversational RAG"]
+)
+
+@rag_router.get("/")
+async def check():
+    return ("this is jsut to chek the endpoint /RAG/")

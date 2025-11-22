@@ -17,3 +17,7 @@ app.include_router(endpoints.router)
 
 # include endpoint for the document ingestion
 app.include_router(endpoints.document_router)
+
+
+# include conversational RAG endpoints in main
+app.include_router(endpoints.rag_router)

@@ -2,7 +2,7 @@
 
 1. Document Ingestion API
     - Upload .pdf or .txt files(done)
-    - Extract text, apply two chunking strategies (selectable)
+    - Extract text, apply two chunking strategies (selectable)(done but applying it remaining)
     - Generate embeddings & store in Pinecone/Qdrant/Weaviate/Milvus
     - Save metadata in SQL/NoSQL DB
 2. Conversational RAG API
@@ -20,6 +20,8 @@ No FAISS/Chroma, no UI, no RetrievalQAChain clean modular code following industr
 - project initialization(done)
 - uploading file(done)
 - acceopting only the supported file type .pdf & .txt(done)
+- text extraction using pypdf for .pdf and utf-8 decoding for .txt(done)
+- selectable chunking(fixed, semantic) strategy(done)
 
 
 ## project architecture
