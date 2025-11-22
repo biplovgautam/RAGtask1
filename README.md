@@ -24,6 +24,7 @@ No FAISS/Chroma, no UI, no RetrievalQAChain clean modular code following industr
 - selectable chunking(fixed, semantic) strategy(done)
 - apply chunking strategy(done)
 - embedding and storing both pinecone directly provides integrated interface for embedding models so we don't need to do embedding by ourself (done)
+- saving document metadata in neon postgress(done)
 
 
 ## project architecture
