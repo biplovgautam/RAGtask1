@@ -55,7 +55,7 @@ class ConversationMode(str, Enum):
 
 class KnowledgeBaseMode(str, Enum):
     """
-    Defines whether to use vector database retrieval or not.
+    Defines whether to use vector database retrieval or not if cv was upload as document.
     """
     YES = "yes"   # Use Pinecone vector DB for context retrieval
     NO = "no"     # Skip vector retrieval, use only LLM

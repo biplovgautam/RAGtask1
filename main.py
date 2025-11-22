@@ -8,9 +8,10 @@ from app.api import endpoints
 from app.core.db import Base, ndb
 
 app = FastAPI(
-    title="RAGtask API",
-    description="This is a custom RAG developed for my AI/ML intern task at palm mind.",
-    version="1.0.0") 
+    title="RAGTask Backend API",
+    description="Two REST APIs: 1) Document Ingestion API, 2) Conversational RAG API with Redis memory and interview booking.",
+    version="1.0.0"
+) 
 
 # Create database tables
 # Import models to register them with Base
@@ -18,12 +19,12 @@ from app.api.models import DocumentMetadata, InterviewBooking
 if ndb is not None:
     Base.metadata.create_all(bind=ndb)
 
-# includes all endpoints in this actual app from the app/api/endpoints.py
-app.include_router(endpoints.router) 
+# ============================================
+# Register the two main API routers
+# ============================================
 
-# include endpoint for the document ingestion
+# API 1: Document Ingestion (POST /documents/upload/)
 app.include_router(endpoints.document_router)
 
-
-# include conversational RAG endpoints in main
+# API 2: Conversational RAG (POST /RAG/chat)
 app.include_router(endpoints.rag_router)

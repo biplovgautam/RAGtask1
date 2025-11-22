@@ -16,6 +16,69 @@
 ### Constraints:
 No FAISS/Chroma, no UI, no RetrievalQAChain clean modular code following industry standards for typing and annotations
 
+## 🎯 API Overview
+
+### 1. **Document Ingestion API**
+- **Endpoint**: `POST /documents/upload/`
+- **Purpose**: Upload and process documents (.pdf, .txt)
+- **Features**:
+  - File upload with validation
+  - Text extraction
+  - Chunking (Fixed/Semantic strategies)
+  - Embedding generation & storage (Pinecone)
+  - Metadata storage (Neon PostgreSQL)
+
+### 2. **Conversational RAG API**
+- **Endpoint**: `POST /RAG/chat`
+- **Purpose**: Chat with AI using knowledge base and memory
+- **Features**:
+  - Multi-turn conversations (Redis memory)
+  - Knowledge base retrieval (optional)
+  - Interview booking detection & storage
+  - Session management (continue/restart)
+
+
+
+## 🔄 Workflow Diagrams
+
+### Document Ingestion Flow:
+```
+Upload File (.pdf/.txt)
+    ↓
+Extract Text (PyPDF/UTF-8)
+    ↓
+Choose Chunking Strategy (Fixed/Semantic)
+    ↓
+Apply Chunking
+    ↓
+Generate Embeddings (Pinecone Inference API)
+    ↓
+Store Vectors (Pinecone - default namespace)
+    ↓
+Save Metadata (Neon PostgreSQL)
+    ↓
+Return Response
+```
+
+### Conversational RAG Flow:
+```
+User Query
+    ↓
+Load History (Redis Cloud)
+    ↓
+Detect Booking Intent? ──→ YES → Extract Info → Save to DB
+    ↓ NO
+Retrieve Context (Pinecone) if knowledge_base=yes
+    ↓
+Generate Response (Groq LLM)
+    ↓
+Save to History (Redis)
+    ↓
+Return Response
+```
+
+
+
 ## Status
 - project initialization(done)
 - uploading file(done)
