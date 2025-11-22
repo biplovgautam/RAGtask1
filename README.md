@@ -6,11 +6,11 @@
     - Generate embeddings & store in Pinecone/Qdrant/Weaviate/Milvus (pc connectiondone, storing done)
     - Save metadata in SQL/NoSQL DB (db connection done, storing the metadata done)
 2. Conversational RAG API
-    - Custom RAG (no RetrievalQAChain)
-    - Use Redis for chat memory
-    - Handle multi-turn queries
-    - Support interview booking (name, email, date, time) using  LLM
-    - Store booking info
+    - Custom RAG (no RetrievalQAChain)(done)
+    - Use Redis for chat memory(done using redis cloud)
+    - Handle multi-turn queries(done)
+    - Support interview booking (name, email, date, time) using  LLM(done)
+    - Store booking info(done)
 
 
 ### Constraints:

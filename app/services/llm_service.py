@@ -91,17 +91,31 @@ class ConversationalRAGService:
         
         return "\n".join(formatted)
     
-    def _detect_booking_intent(self, query: str) -> bool:
+    def _detect_booking_intent(self, query: str, history: List[Dict[str, str]] = None) -> bool:
         """
         Detect if user wants to book an interview.
-        Simple keyword-based detection.
+        Checks both current query and recent conversation history.
         """
         booking_keywords = [
             "book", "schedule", "appointment", "interview",
             "meeting", "reserve", "set up", "arrange"
         ]
+        
+        # Check current query
         query_lower = query.lower()
-        return any(keyword in query_lower for keyword in booking_keywords)
+        if any(keyword in query_lower for keyword in booking_keywords):
+            return True
+        
+        # Check if recent conversation history mentions booking
+        if history:
+            # Check last 4 messages for booking context
+            recent_messages = history[-4:] if len(history) > 4 else history
+            for msg in recent_messages:
+                content = msg.get("content", "").lower()
+                if any(keyword in content for keyword in booking_keywords):
+                    return True
+        
+        return False
 
     def _extract_booking_info(self, conversation: str) -> Optional[Dict[str, str]]:
         """
@@ -216,17 +230,25 @@ Return ONLY a JSON object with this exact format (no other text):
         else:
             history = self._get_chat_history(session_id)
         
-        # Detect booking intent
-        is_booking_intent = self._detect_booking_intent(query)
+        # Detect booking intent (check query + history)
+        is_booking_intent = self._detect_booking_intent(query, history)
         booking_created = False
         
         # If booking intent detected, check if we have enough info
         if is_booking_intent:
             # Add current query to temporary history for extraction
             temp_history = history + [{"role": "user", "content": query}]
-            conversation_text = self._format_chat_history(temp_history)
             
-            booking_data = self._extract_booking_info(conversation_text + f"\nUSER: {query}")
+            # Use FULL conversation history for booking extraction (not just last 6)
+            full_conversation = []
+            for msg in temp_history:
+                role = msg.get("role", "unknown")
+                content = msg.get("content", "")
+                full_conversation.append(f"{role.upper()}: {content}")
+            
+            conversation_text = "\n".join(full_conversation)
+            
+            booking_data = self._extract_booking_info(conversation_text)
             
             if booking_data:
                 # We have complete booking info, save it
@@ -270,7 +292,13 @@ USER QUERY: {query}
 
 Instructions:
 - Answer based on the context and conversation history
-- If booking an interview, ask for: name, email, date (YYYY-MM-DD), and time (HH:MM)
+- If user wants to book an interview, ONLY ask for these 4 details (don't ask about purpose, company, or topic):
+  1. Full name
+  2. Email address
+  3. Date (YYYY-MM-DD format)
+  4. Time (HH:MM format, 24-hour)
+- Once you have all 4 details, confirm them back to the user
+- Don't ask what the interview is for or who it's with
 - Be conversational and helpful
 - If context doesn't contain relevant information, say so politely
 
@@ -285,7 +313,13 @@ USER QUERY: {query}
 
 Instructions:
 - Continue the conversation naturally
-- If user wants to book an interview, collect: name, email, date (YYYY-MM-DD), and time (HH:MM)
+- If user wants to book an interview, ONLY collect these 4 details (nothing more):
+  1. Full name
+  2. Email address  
+  3. Date (YYYY-MM-DD format)
+  4. Time (HH:MM format, 24-hour)
+- Don't ask what the interview is for, who it's with, or the topic
+- Once you have all 4 details, confirm them
 - Be friendly and professional
 
 RESPONSE:"""
