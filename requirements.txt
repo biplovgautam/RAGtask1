@@ -6,3 +6,7 @@ requests
 python-multipart
 pypdf
 langchain_text_splitters
+pinecone
+psycopg2-binary
+sqlalchemy
+urllib3<2.0

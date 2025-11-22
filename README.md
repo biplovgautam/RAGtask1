@@ -3,8 +3,8 @@
 1. Document Ingestion API
     - Upload .pdf or .txt files(done)
     - Extract text, apply two chunking strategies (selectable)(done)
-    - Generate embeddings & store in Pinecone/Qdrant/Weaviate/Milvus
-    - Save metadata in SQL/NoSQL DB
+    - Generate embeddings & store in Pinecone/Qdrant/Weaviate/Milvus (pc connectiondone, storing remaining)
+    - Save metadata in SQL/NoSQL DB (db connection done storing the metadata remaining)
 2. Conversational RAG API
     - Custom RAG (no RetrievalQAChain)
     - Use Redis for chat memory
